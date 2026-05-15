@@ -19,17 +19,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%mdj(v2$ur3e#sm$b7t9y^9j(=j^tx-nny0gdf&l)xe@@&#^7#'
+from decouple import config
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = []
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://localhost:5174", 
+    "http://localhost:5174"
 ]
 
 
@@ -134,6 +133,6 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),    # ← 1 day instead of 5 mins
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),   # ← 7 days
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),    #  1 day 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),   # 7 days
 }
