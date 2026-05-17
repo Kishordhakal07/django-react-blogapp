@@ -7,9 +7,23 @@ const Home = () => {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [currentUser, setCurrentUser] = useState(null)
-  const [editingPost, setEditingPost] = useState(null)  // ← which post is being edited
+  const [editingPost, setEditingPost] = useState(null)
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
+  const [nextPage, setNextPage] = useState(null)      // ← next page URL
+  const [prevPage, setPrevPage] = useState(null)      // ← previous page URL
+  const [count, setCount] = useState(0)               // ← total posts
+
+  const fetchPosts = (url = 'http://127.0.0.1:8000/api/posts/') => {
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setPosts(data.results)    // ← now it's data.results not data
+        setNextPage(data.next)    // ← save next page URL
+        setPrevPage(data.previous) // ← save previous page URL
+        setCount(data.count)      // ← save total count
+      })
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('access')
@@ -17,9 +31,7 @@ const Home = () => {
       const decoded = jwtDecode(token)
       setCurrentUser(Number(decoded.user_id))
     }
-    fetch('http://127.0.0.1:8000/api/posts/')
-      .then(res => res.json())
-      .then(data => setPosts(data))
+    fetchPosts()
   }, [])
 
   const handleCreate = async () => {
@@ -34,7 +46,7 @@ const Home = () => {
     })
     const data = await response.json()
     if (response.ok) {
-      setPosts([...posts, data])
+      fetchPosts()  // ← refresh posts after creating
       setTitle('')
       setContent('')
     }
@@ -47,14 +59,14 @@ const Home = () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (response.ok) {
-      setPosts(posts.filter(post => post.id !== id))
+      fetchPosts()  // ← refresh posts after deleting
     }
   }
 
   const handleEditClick = (post) => {
-    setEditingPost(post.id)   // set which post is being edited
-    setEditTitle(post.title)  // fill form with current title
-    setEditContent(post.content)  // fill form with current content
+    setEditingPost(post.id)
+    setEditTitle(post.title)
+    setEditContent(post.content)
   }
 
   const handleEditSave = async (id) => {
@@ -69,9 +81,8 @@ const Home = () => {
     })
     const data = await response.json()
     if (response.ok) {
-      // update the post in the list
-      setPosts(posts.map(post => post.id === id ? data : post))
-      setEditingPost(null)  // close edit form
+      fetchPosts()  // ← refresh posts after editing
+      setEditingPost(null)
     }
   }
 
@@ -104,11 +115,12 @@ const Home = () => {
         </div>
 
         {/* Posts List */}
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">All Posts</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          All Posts ({count} total)
+        </h2>
+
         {posts.map(post => (
           <div key={post.id} className="mb-4">
-
-            {/* Edit Form */}
             {editingPost === post.id ? (
               <div className="bg-white rounded-lg shadow-md p-6 border border-blue-300">
                 <h3 className="font-bold text-gray-800 mb-3">Edit Post</h3>
@@ -165,6 +177,25 @@ const Home = () => {
             )}
           </div>
         ))}
+
+        {/* Pagination Buttons */}
+        <div className="flex justify-between mt-6">
+          <button
+            onClick={() => fetchPosts(prevPage)}
+            disabled={!prevPage}
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
+          <button
+            onClick={() => fetchPosts(nextPage)}
+            disabled={!nextPage}
+            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
+        </div>
+
       </div>
     </div>
   )
