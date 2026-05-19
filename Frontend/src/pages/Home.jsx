@@ -10,18 +10,31 @@ const Home = () => {
   const [editingPost, setEditingPost] = useState(null)
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
-  const [nextPage, setNextPage] = useState(null)      // ← next page URL
-  const [prevPage, setPrevPage] = useState(null)      // ← previous page URL
-  const [count, setCount] = useState(0)               // ← total posts
+  const [nextPage, setNextPage] = useState(null)
+  const [prevPage, setPrevPage] = useState(null)
+  const [count, setCount] = useState(0)
+  const [search, setSearch] = useState('')
+  const [author, setAuthor] = useState('')
 
-  const fetchPosts = (url = 'http://127.0.0.1:8000/api/posts/') => {
-    fetch(url)
+  const fetchPosts = (url = null) => {
+    let baseUrl = 'http://127.0.0.1:8000/api/posts/'
+
+    if (url) {
+      baseUrl = url
+    } else {
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      if (author) params.append('author', author)
+      if (params.toString()) baseUrl += '?' + params.toString()
+    }
+
+    fetch(baseUrl)
       .then(res => res.json())
       .then(data => {
-        setPosts(data.results)    // ← now it's data.results not data
-        setNextPage(data.next)    // ← save next page URL
-        setPrevPage(data.previous) // ← save previous page URL
-        setCount(data.count)      // ← save total count
+        setPosts(data.results)
+        setNextPage(data.next)
+        setPrevPage(data.previous)
+        setCount(data.count)
       })
   }
 
@@ -46,7 +59,7 @@ const Home = () => {
     })
     const data = await response.json()
     if (response.ok) {
-      fetchPosts()  // ← refresh posts after creating
+      fetchPosts()
       setTitle('')
       setContent('')
     }
@@ -59,7 +72,7 @@ const Home = () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (response.ok) {
-      fetchPosts()  // ← refresh posts after deleting
+      fetchPosts()
     }
   }
 
@@ -81,7 +94,7 @@ const Home = () => {
     })
     const data = await response.json()
     if (response.ok) {
-      fetchPosts()  // ← refresh posts after editing
+      fetchPosts()
       setEditingPost(null)
     }
   }
@@ -90,27 +103,65 @@ const Home = () => {
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-3xl mx-auto py-8 px-4">
 
-        {/* Create Post Form */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Create New Post</h2>
+        {/* Create Post Form - only show if logged in */}
+        {currentUser ? (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Create New Post</h2>
+            <input
+              type="text"
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <textarea
+              placeholder="Content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400 h-32"
+            />
+            <button
+              onClick={handleCreate}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Create Post
+            </button>
+          </div>
+        ) : (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6 text-center">
+            <p className="text-yellow-700 font-semibold">
+              Please login first to create a post!
+            </p>
+            
+            <a href="/login"
+              className="text-blue-500 hover:underline mt-2 inline-block"
+            >
+              Login here
+            </a>
+          </div>
+        )}
+
+        {/* Search and Filter */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex gap-3">
           <input
             type="text"
-            placeholder="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Search posts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-          <textarea
-            placeholder="Content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400 h-32"
+          <input
+            type="text"
+            placeholder="Filter by author..."
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <button
-            onClick={handleCreate}
+            onClick={() => fetchPosts()}
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
-            Create Post
+            Search
           </button>
         </div>
 

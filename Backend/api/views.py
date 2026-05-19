@@ -5,6 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Post
 from .serializers import PostSerializer, RegisterSerializer
+from .permissions import IsAuthorOrReadOnly
 
 
 class PostListView(APIView):
@@ -40,16 +41,18 @@ class PostListView(APIView):
             serializer.save(author=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        
 
 class PostDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
 
     def get_object(self, pk):
         try:
-            return Post.objects.get(pk=pk)
+            post = Post.objects.get(pk=pk)
+            self.check_object_permissions(self.request, post)  #  check permissions!
+            return post
         except Post.DoesNotExist:
-            return None
+            return None        
 
     def get(self, request, pk):
         post = self.get_object(pk)
